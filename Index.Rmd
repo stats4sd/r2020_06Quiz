@@ -1,0 +1,163 @@
+---
+title: "Introduction to Statistical Modelling in R - Part 2"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    df_print: default
+runtime: shiny_prerendered
+description: >
+  Modelling in R
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggfortify)
+library(learnr)
+library(broom)
+library(knitr)
+library(Lock5Data)
+library(emmeans)
+
+tutorial_options(exercise.timelimit = 10)
+options(tibble.width = Inf)
+FootballBrain<-Lock5Data::FootballBrain
+
+FootballPlayers<-filter(FootballBrain,Group!="Control")
+hipp_model <- lm(Hipp~Years*Group,data=FootballPlayers)
+hipp_model2 <- lm(Hipp~Years+Group,data=FootballPlayers)
+```
+
+
+## Quiz 
+In the quiz we will be considering the `FootballBrain` data again. This time only considering the participants who had played football, to consider the combined impact of prolonged football playing and concussion injuries upon hippocampus volume.
+
+I have created a subset of the data called `FootballPlayers`, excluding the control group
+
+```{r}
+ggplot(FootballPlayers,aes(y=Hipp,x=Years,col=Group))+
+    geom_point()+
+      geom_smooth(method="lm",se=FALSE)
+```
+
+
+**Question 1**
+```{r Q1, echo=FALSE}
+question("What is the correct syntax for fitting a model with `Hipp` as the response variable, and `Years` and `Group` as explanatory variables, with an interaction term between them?",
+  answer("hipp_model <- lm(Hipp~Years*Group,data=FootballPlayers)",correct=TRUE),
+  answer("hipp_model <- 1m(Hipp~Years*Group,data=FootballPlayers)",message="This starts with the number '1' instead of a the letter 'l'. It's an easy mistake to make"),
+  answer("hipp_model <- lm(Hipp~Years~Group,data=FootballPlayers)",message="In the model notation the tilda seperates the response variable(s) from the explanatory variable(s)"),
+  answer("hipp_model <- lm(Hipp~Years+Group,data=FootballPlayers)",message="This model would not fit an interaction"),allow_retry = TRUE,random_answer_order = TRUE
+)
+```
+
+
+**Question 2**
+I have now fitted this model, and used the `summary()` and `anova()` functions to try to understand the relationship. You can see these below.
+
+```{r}
+summary(hipp_model)
+```
+
+```{r}
+anova(hipp_model)
+```
+
+```{r Q2, echo=FALSE}
+question("Which of the following would be an appropriate interpretation from this output?",
+  answer("The interaction term is over-complicating the model, and should probably be removed",message="We see from the overall model significance, and the anova table that individual effects are highly significant. But the presence of the interaction seems to be inflating standard errors and will make model coefficients unstable and ungeneralisable",correct=TRUE),
+  answer("None of the variables have a significant effect on hippocampus size",message="Definitely not true!"),
+  answer("The interaction term is negative, therefore the players with no concussion injuries saw larger reductions in hippocampus volume over time compared to the players who did have concussion injuries",message="The interaction term is not significant. So we have no evidence that the difference in the data is a 'real' effect and not just differences due to random underlying variability."),
+  answer("Because the intercept is the only significant term, we should keep it simple by reducing to a new model with only an intercept term",message="This would not be a good approach! Always reduce models one term at a time; if we did this we would see that more than just the intercept term was significant"),allow_retry = TRUE,random_answer_order = TRUE
+)
+```
+
+**Question 3**
+
+I have created a new model, `hipp_model2` without the interaction term, and summarised it below as well as using `autoplot` to check the residuals.
+
+
+```{r}
+summary(hipp_model2)
+```
+
+```{r Q3a, echo=FALSE}
+question("Which of the following interpretations of the summary are correct?",
+  answer("The expected value of hippocampus volume for football players with no concussion is 452 microL lower than that for players with concussion",message="This is missing something! 'for same number of years playing time'"),
+  answer("We would expect someone with no years of playing experience to have a hippocampus size of 6867.34 microL",
+         message="This is missing something! 'With a concussion injury' since concussion injury is the reference group. It probably does not make sense to interpet the intercept in this way"),
+  answer("For every year increase in playing time we expect to see a reduction of size of 86.34 microL within both groups",correct=TRUE),
+  answer("Because the coefficient for `Group` is larger than the coefficient for `Years` - this means `Group` has a larger effect than `Years`",message="This is incorrect. Because the variables are in different units so you cannot compare the coefficients in this way."),allow_retry = TRUE,random_answer_order = TRUE
+)
+```
+
+**Question 4**
+
+I have now looked at the residuals from this model:
+```{r,warning=FALSE,message=FALSE}
+autoplot(hipp_model2)
+```
+```{r Q3, echo=FALSE}
+question("Which of the following interpretations of the residual plots are appropriate?",
+  answer("Observations from rows 25 and 50 are outliers and should be removed",message="Rows 25 and 50 are minor outliers, but they do not appear to be huge outliers; certainly not enough to consider removal"),
+  answer("The points from the Normal Q-Q plot do not all fall on the line. So we cannot assume an underlying normal distribution",
+         message="While the points do not line up perfectly, it looks 'close enough' to normality where it should not be an issue. We only need approximate normality, not exact perfect normality"),
+  answer("There is no trend in the 'Residuals vs Fitted' Plot, therefore linearity seems an appropriate assumption",correct=TRUE),
+  answer("There is some evidence of an increase in variability with an increase in the fitted values, but this seems to be driven by just two observations which were predicted extremely well",correct=TRUE),allow_retry = TRUE,random_answer_order = TRUE
+)
+```
+
+
+**Question 5**
+
+From the same model without the interaction, I used `emmeans()` to produce estimated marginal means for the group variable. I then also calculated means from the data, and noticed that these mean values were different.
+
+```{r}
+emmeans(hipp_model2,~Group)
+```
+
+```{r}
+FootballPlayers %>%
+  group_by(Group) %>%
+    summarise(mean(Hipp))
+```
+
+```{r Q5, echo=FALSE}
+question("Why are the values different between calculating the mean from the data and calculating the estimated marginal means from the models?",
+  answer("Nobody knows"),
+  answer("The model is not a good fit for the data",
+         message="Whether these means are different is not an indication of model fit"),
+  answer("The average number of years playing football is different for each group; so `emmeans()` adjusts for this to provide estimated hippocampus size for the groups as if the number of years playing football was the same for each group",correct=TRUE),
+  answer("There are missing values in the data, which `emmeans()` is able to adjust for"),allow_retry = TRUE,random_answer_order = TRUE
+)
+```
+
+
+
+
+## Data used in this session
+
+The data used for this session is taken from a 2014 study into the impact of playing American Football on brain damage and cognitive function. It has been imported into this session as a data frame called `FootballBrain`.
+
+
+Data from 75 individuals is available. There are a mixture of football players with known skull or concussion injuries; football players without known skull or concussion injuries; and non-football players who have a similar demographic profile to the football players. Which of these three groups an individual is part of is shown in the `Group` variable. Other data available is shown below.
+
+```{r,echo=FALSE}
+data.frame(Variable=colnames(FootballBrain),
+           Explanation=c("Group (explained above)","Total hippocampus volume, in microL",
+                         "Left hippocampus volume, in microL","	Number of years playing football","Cognitive testing composite reaction time score, given as a percentile. This is not available for all participants")) %>% kable()
+```
+
+In part 1 we will be building a model to try to understand the relationship between total hippocampus volume with the number of years playing football.
+
+You can explore this data a little below:
+
+
+```{r,echo=FALSE}
+DT::datatable(FootballBrain)
+```
+
+Reference for the data:
+
+Singh R, Meier T, Kuplicki R, Savitz J, et al., "Relationship of Collegiate Football Experience and Concussion With Hippocampal Volume and Cognitive Outcome," JAMA, 311(18), 2014
