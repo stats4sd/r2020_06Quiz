@@ -31,9 +31,17 @@ hipp_model2 <- lm(Hipp~Years+Group,data=FootballPlayers)
 
 
 ## Quiz 
+
+
+This quiz is perhaps a bit more difficult than some of the previous quizzes! There are a lot of statistical concepts covered quite quickly and briefly during this module. Within the workbooks we have provided links to additional resources about these topics.
+
+Understanding the statistical techniques, and being able to interpret the output from R are very key skills when analysing your data. So this is the main focus of this quiz
+
+
+
 In the quiz we will be considering the `FootballBrain` data again. This time only considering the participants who had played football, to consider the combined impact of prolonged football playing and concussion injuries upon hippocampus volume.
 
-I have created a subset of the data called `FootballPlayers`, excluding the control group
+I have created a subset of the data called `FootballPlayers`, excluding the control group. You can see a plot of the number of years against hippocampus volume with points and lines coloured by the concussion group.
 
 ```{r}
 ggplot(FootballPlayers,aes(y=Hipp,x=Years,col=Group))+
@@ -66,9 +74,9 @@ anova(hipp_model)
 
 ```{r Q2, echo=FALSE}
 question("Which of the following would be an appropriate interpretation from this output?",
-  answer("The interaction term is over-complicating the model, and should probably be removed",message="We see from the overall model significance, and the anova table that individual effects are highly significant. But the presence of the interaction seems to be inflating standard errors and will make model coefficients unstable and ungeneralisable",correct=TRUE),
+  answer("The interaction term is over-complicating the model, and should probably be removed",message="We see from the overall model significance (p=0.0006743), and the p-values in the ANOVA table that individual effects are highly significant. But the presence of the interaction seems to be inflating standard errors and will make model coefficients unstable and ungeneralisable",correct=TRUE),
   answer("None of the variables have a significant effect on hippocampus size",message="Definitely not true!"),
-  answer("The interaction term is negative, therefore the players with no concussion injuries saw larger reductions in hippocampus volume over time compared to the players who did have concussion injuries",message="The interaction term is not significant. So we have no evidence that the difference in the data is a 'real' effect and not just differences due to random underlying variability."),
+  answer("The interaction term is negative, therefore we can conclude that the players with no concussion injuries saw larger reductions in hippocampus volume over time compared to the players who did have concussion injuries",message="The interaction term is not significant. So we have no evidence that the difference in the data is a 'real' effect and not just differences due to random underlying variability."),
   answer("Because the intercept is the only significant term, we should keep it simple by reducing to a new model with only an intercept term",message="This would not be a good approach! Always reduce models one term at a time; if we did this we would see that more than just the intercept term was significant"),allow_retry = TRUE,random_answer_order = TRUE
 )
 ```
@@ -83,11 +91,11 @@ summary(hipp_model2)
 ```
 
 ```{r Q3a, echo=FALSE}
-question("Which of the following interpretations of the summary are correct?",
-  answer("The expected value of hippocampus volume for football players with no concussion is 452 microL lower than that for players with concussion",message="This is missing something! 'for same number of years playing time'"),
+question("Which of the following interpretations of this summary would be appropriate?",
+  answer("The expected value of hippocampus volume for football players with no concussion is 452 microL lower than that for players with concussion",message="This is missing something! We need to hold all other variables constant, so adding in 'for same number of years playing time'"),
   answer("We would expect someone with no years of playing experience to have a hippocampus size of 6867.34 microL",
-         message="This is missing something! 'With a concussion injury' since concussion injury is the reference group. It probably does not make sense to interpet the intercept in this way"),
-  answer("For every year increase in playing time we expect to see a reduction of size of 86.34 microL within both groups",correct=TRUE),
+         message="This is missing something! Since concussion injury group is the reference group this only applies to this group, and not the non-concussion group. It probably does not make sense to interpet the intercept in this way"),
+  answer("For every year increase in playing time we expect to see a reduction of size of 86.34 microL within both groups",correct=TRUE,message="Because we removed the interaction term, this is indeed the same for both groups within the model."),
   answer("Because the coefficient for `Group` is larger than the coefficient for `Years` - this means `Group` has a larger effect than `Years`",message="This is incorrect. Because the variables are in different units so you cannot compare the coefficients in this way."),allow_retry = TRUE,random_answer_order = TRUE
 )
 ```
@@ -100,11 +108,11 @@ autoplot(hipp_model2)
 ```
 ```{r Q3, echo=FALSE}
 question("Which of the following interpretations of the residual plots are appropriate?",
-  answer("Observations from rows 25 and 50 are outliers and should be removed",message="Rows 25 and 50 are minor outliers, but they do not appear to be huge outliers; certainly not enough to consider removal"),
-  answer("The points from the Normal Q-Q plot do not all fall on the line. So we cannot assume an underlying normal distribution",
+  answer("Observations from rows 25 and 50 are outliers, which is why they have been labelled on several of the plots, and therefore should be removed",message="Rows 25 and 50 are minor outliers, but they do not appear to be huge outliers; certainly not enough to consider removal"),
+  answer("The points from the Normal Q-Q plot (top-right) do not all fall on the line. So we cannot assume an underlying normal distribution",
          message="While the points do not line up perfectly, it looks 'close enough' to normality where it should not be an issue. We only need approximate normality, not exact perfect normality"),
-  answer("There is no trend in the 'Residuals vs Fitted' Plot, therefore linearity seems an appropriate assumption",correct=TRUE),
-  answer("There is some evidence of an increase in variability with an increase in the fitted values, but this seems to be driven by just two observations which were predicted extremely well",correct=TRUE),allow_retry = TRUE,random_answer_order = TRUE
+  answer("There is no trend in the 'Residuals vs Fitted' Plot (top-left), therefore linearity seems an appropriate assumption",correct=TRUE),
+  answer("There is some evidence of an increase in variability with an increase in the fitted values (bottom-left), but this seems to be driven by just two observations which were predicted extremely well",correct=TRUE),allow_retry = TRUE,random_answer_order = TRUE
 )
 ```
 
